@@ -1,0 +1,1467 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Трекер">
+<meta name="theme-color" content="#0e0d0b">
+<title>Нигина · трекер</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0d0b;
+  --surface: #141310;
+  --card: #1a1916;
+  --card2: #1f1e1a;
+  --border: rgba(255,255,255,0.06);
+  --border-strong: rgba(255,255,255,0.11);
+  --gold: #c9a96e;
+  --gold-light: #e2c48a;
+  --gold-dim: rgba(201,169,110,0.14);
+  --gold-glow: rgba(201,169,110,0.06);
+  --text: #ede9e0;
+  --text-muted: #857f74;
+  --text-dim: #4e4a44;
+  --purple: #9b82c0;
+  --purple-dim: rgba(155,130,192,0.13);
+  --rose: #c47d8d;
+  --rose-dim: rgba(196,125,141,0.13);
+  --sage: #74a882;
+  --sage-dim: rgba(116,168,130,0.13);
+  --amber: #c49a5a;
+  --font-d: 'Cormorant Garamond', serif;
+  --font-b: 'DM Sans', sans-serif;
+  --r: 14px;
+  --rs: 10px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-b);
+  font-weight: 300;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Glow orbs */
+.orb {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+.orb1 { top: -20%; right: -15%; width: 55vw; height: 55vw;
+  background: radial-gradient(circle, rgba(201,169,110,0.05) 0%, transparent 65%); }
+.orb2 { bottom: -20%; left: -15%; width: 45vw; height: 45vw;
+  background: radial-gradient(circle, rgba(155,130,192,0.05) 0%, transparent 65%); }
+
+.app { position: relative; z-index: 1; }
+
+/* ── MOBILE NAV ── */
+.mobile-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0; right: 0;
+  padding: 10px 0 calc(10px + var(--safe-bottom));
+  background: rgba(14,13,11,0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border-strong);
+  z-index: 100;
+}
+.nav-inner { display: flex; justify-content: space-around; }
+.nav-tab {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 4px; padding: 4px 16px;
+  font-size: 0.62rem; color: var(--text-dim);
+  letter-spacing: 0.06em; text-transform: uppercase;
+  cursor: pointer; background: none; border: none;
+  transition: color 0.15s;
+}
+.nav-tab.active { color: var(--gold); }
+.nav-tab svg { width: 20px; height: 20px; }
+
+@media (max-width: 680px) {
+  .mobile-nav { display: block; }
+}
+
+/* ── DESKTOP LAYOUT ── */
+.desktop-wrap {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 1.5rem 4rem;
+}
+
+.header {
+  padding: calc(var(--safe-top) + 2rem) 0 1.8rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.header h1 {
+  font-family: var(--font-d);
+  font-weight: 300;
+  font-size: clamp(2.2rem, 5vw, 3.6rem);
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+.header h1 em { color: var(--gold); font-style: italic; }
+.header-sub { font-size: 0.72rem; color: var(--text-dim); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 6px; }
+
+.header-right { text-align: right; }
+.streak-big { font-family: var(--font-d); font-size: 2.8rem; font-weight: 300; color: var(--gold); line-height: 1; }
+.streak-lbl { font-size: 0.68rem; color: var(--text-dim); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 2px; }
+
+/* ── HISTORY BAR ── */
+.history-wrap { overflow-x: auto; margin-bottom: 1.8rem; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
+.history-inner { display: flex; gap: 3px; min-width: max-content; }
+.hist-day { display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; }
+.hist-bar { width: 18px; height: 36px; border-radius: 4px; background: var(--border); position: relative; overflow: hidden; transition: opacity .15s; }
+.hist-bar:hover { opacity: 0.75; }
+.hist-fill { position: absolute; bottom: 0; left: 0; right: 0; border-radius: 4px; transition: height .3s ease; }
+.hist-lbl { font-size: 0.58rem; color: var(--text-dim); letter-spacing: 0.03em; }
+.hist-day.sel .hist-bar { outline: 1.5px solid var(--gold); outline-offset: 1px; }
+
+/* ── LAYOUT ── */
+.layout { display: grid; grid-template-columns: 1fr 300px; gap: 1.4rem; align-items: start; }
+
+/* ── TABS (mobile only) ── */
+.page { display: block; }
+.page.hidden { display: none; }
+
+/* ── DATE LABEL ── */
+.date-label {
+  font-family: var(--font-d);
+  font-size: 1.55rem;
+  font-weight: 300;
+  margin-bottom: 1.2rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--border);
+}
+.date-label em { color: var(--gold); font-style: italic; }
+
+/* ── QUOTE OF DAY ── */
+.quote-card {
+  background: var(--gold-dim);
+  border: 1px solid rgba(201,169,110,0.2);
+  border-radius: var(--r);
+  padding: 1rem 1.2rem;
+  margin-bottom: 1.2rem;
+  position: relative;
+}
+.quote-mark {
+  font-family: var(--font-d);
+  font-size: 3rem;
+  color: var(--gold);
+  opacity: 0.25;
+  position: absolute;
+  top: -2px; left: 10px;
+  line-height: 1;
+}
+.quote-text {
+  font-family: var(--font-d);
+  font-size: 1rem;
+  font-style: italic;
+  color: var(--gold-light);
+  line-height: 1.5;
+  padding-left: 1.2rem;
+}
+.quote-refresh {
+  position: absolute; top: 8px; right: 10px;
+  background: none; border: none; color: var(--gold); opacity: 0.4;
+  font-size: 14px; cursor: pointer; transition: opacity .15s;
+}
+.quote-refresh:hover { opacity: 0.9; }
+
+/* ── PROGRESS RING CARD ── */
+.day-progress {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 1.1rem 1.3rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+}
+.ring-wrap { flex-shrink: 0; width: 60px; height: 60px; position: relative; }
+.ring-svg { transform: rotate(-90deg); }
+.ring-bg { fill: none; stroke: var(--border-strong); stroke-width: 4.5; }
+.ring-fill { fill: none; stroke: var(--gold); stroke-width: 4.5; stroke-linecap: round; transition: stroke-dashoffset .6s cubic-bezier(.4,0,.2,1); }
+.ring-pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 500; color: var(--gold); }
+.pbar-rows { flex: 1; display: flex; flex-direction: column; gap: 7px; }
+.pbar-row { display: flex; align-items: center; gap: 8px; }
+.pbar-lbl { font-size: 0.68rem; color: var(--text-dim); width: 46px; letter-spacing: 0.05em; text-transform: uppercase; }
+.pbar-track { flex: 1; height: 3px; background: var(--border-strong); border-radius: 2px; overflow: hidden; }
+.pbar-fill { height: 100%; border-radius: 2px; transition: width .45s ease; }
+.pbar-fill.book { background: var(--purple); }
+.pbar-fill.care { background: var(--rose); }
+.pbar-fill.sport { background: var(--sage); }
+.pbar-pct { font-size: 0.68rem; color: var(--text-dim); width: 28px; text-align: right; }
+
+/* ── MOOD ── */
+.mood-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 1.1rem 1.3rem;
+  margin-bottom: 1rem;
+}
+.card-title {
+  font-family: var(--font-d);
+  font-size: 1.05rem;
+  font-weight: 400;
+  color: var(--text);
+  margin-bottom: 0.8rem;
+}
+.mood-opts { display: flex; gap: 6px; flex-wrap: wrap; }
+.mood-btn {
+  padding: 5px 13px;
+  border-radius: 20px;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-b);
+  font-size: 0.76rem;
+  cursor: pointer;
+  transition: all .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.mood-btn:hover, .mood-btn:active { border-color: var(--gold); color: var(--gold); }
+.mood-btn.active { background: var(--gold); border-color: var(--gold); color: #0e0d0b; font-weight: 500; }
+
+/* ── ENERGY ── */
+.energy-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 1.1rem 1.3rem;
+  margin-bottom: 1rem;
+}
+.energy-slider {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border-strong);
+  margin: 0.5rem 0;
+  cursor: pointer;
+}
+.energy-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--gold);
+  cursor: pointer;
+}
+.energy-labels { display: flex; justify-content: space-between; font-size: 0.65rem; color: var(--text-dim); }
+.energy-val { float: right; font-size: 0.78rem; font-weight: 500; color: var(--gold); margin-bottom: 4px; }
+
+/* ── WATER ── */
+.water-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 1.1rem 1.3rem;
+  margin-bottom: 1rem;
+}
+.water-glasses { display: flex; gap: 6px; margin-top: 0.6rem; flex-wrap: wrap; }
+.glass {
+  width: 32px; height: 38px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 4px 4px 6px 6px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: border-color .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.glass.filled { border-color: #4a90d9; }
+.glass-fill {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 0;
+  background: linear-gradient(to top, #4a90d9, #6aaee8);
+  transition: height .25s ease;
+}
+.glass.filled .glass-fill { height: 100%; }
+.water-lbl { font-size: 0.72rem; color: var(--text-muted); margin-top: 6px; }
+
+/* ── SECTION ── */
+.section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+.section-head {
+  padding: 0.9rem 1.3rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.s-arrow {
+  margin-left: 6px;
+  color: var(--text-dim);
+  font-size: 11px;
+  transition: transform .2s;
+  flex-shrink: 0;
+}
+.section.collapsed .s-arrow { transform: rotate(-90deg); }
+.section.collapsed .section-body { display: none; }
+.section.collapsed .section-head { border-bottom: none; }
+.s-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+.s-icon.book { background: var(--purple-dim); }
+.s-icon.care { background: var(--rose-dim); }
+.s-icon.sport { background: var(--sage-dim); }
+.s-title { font-family: var(--font-d); font-size: 1.05rem; font-weight: 400; color: var(--text); }
+.s-cnt { margin-left: auto; font-size: 0.7rem; color: var(--text-dim); background: var(--border); padding: 2px 8px; border-radius: 12px; }
+.section-body { padding: 0.5rem 0.8rem; }
+
+/* ── BOOK CARD ── */
+.book-card {
+  display: flex;
+  gap: 14px;
+  padding: 0.8rem 0.5rem 0.5rem;
+  align-items: flex-start;
+}
+.book-cover-wrap { flex-shrink: 0; }
+.book-cover {
+  width: 72px;
+  height: 104px;
+  border-radius: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+.book-cover-placeholder { font-size: 28px; }
+.book-info-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.book-title-inp {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-d);
+  font-size: 1rem;
+  font-weight: 400;
+  padding: 3px 2px;
+}
+.book-title-inp:focus { outline: none; border-bottom-color: var(--gold); }
+.book-title-inp::placeholder { color: var(--text-dim); font-family: var(--font-b); font-size: 0.82rem; }
+.book-author-inp {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-b);
+  font-size: 0.76rem;
+  padding: 1px 2px;
+}
+.book-author-inp:focus { outline: none; color: var(--text); }
+.book-author-inp::placeholder { color: var(--text-dim); }
+.book-pages-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
+.book-pages-field { display: flex; flex-direction: column; gap: 2px; }
+.book-pages-lbl { font-size: 0.6rem; color: var(--text-dim); letter-spacing: 0.06em; text-transform: uppercase; }
+.book-progress-wrap { margin-top: 2px; }
+.book-progress-track { height: 4px; background: var(--border-strong); border-radius: 2px; overflow: hidden; }
+.book-progress-fill { height: 100%; background: var(--purple); border-radius: 2px; transition: width .4s ease; }
+.book-progress-labels { display: flex; justify-content: space-between; margin-top: 4px; }
+.book-progress-labels span { font-size: 0.68rem; color: var(--text-dim); }
+.book-finish-btn {
+  margin-top: 4px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--sage);
+  background: transparent;
+  color: var(--sage);
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all .15s;
+  align-self: flex-start;
+  font-family: var(--font-b);
+}
+.book-finish-btn:hover, .book-finish-btn:active { background: var(--sage); color: #0e0d0b; }
+
+.finished-title {
+  font-size: 0.68rem;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.5rem 0.5rem 0.3rem;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+}
+.finished-book-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0.5rem 0.5rem;
+  border-radius: 8px;
+}
+.finished-book-cover {
+  width: 32px;
+  height: 46px;
+  border-radius: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+.finished-book-cover img { width: 100%; height: 100%; object-fit: cover; }
+.finished-book-info { flex: 1; min-width: 0; }
+.finished-book-title { font-size: 0.82rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.finished-book-meta { font-size: 0.68rem; color: var(--text-dim); margin-top: 1px; }
+.finished-book-badge {
+  font-size: 0.65rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--sage-dim);
+  color: var(--sage);
+  flex-shrink: 0;
+}
+
+/* ── HABIT ── */
+.habit {
+  display: flex; align-items: center; gap: 12px;
+  padding: 0.65rem 0.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background .12s;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.habit:active { background: rgba(255,255,255,0.03); }
+.habit:hover { background: rgba(255,255,255,0.02); }
+.chk {
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 1.5px solid var(--border-strong);
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .2s;
+}
+.habit.done.book .chk { background: var(--purple); border-color: var(--purple); }
+.habit.done.care .chk { background: var(--rose); border-color: var(--rose); }
+.habit.done.sport .chk { background: var(--sage); border-color: var(--sage); }
+.chk svg { display: none; }
+.habit.done .chk svg { display: block; }
+.h-name { font-size: 0.85rem; color: var(--text-muted); transition: all .15s; flex: 1; line-height: 1.4; }
+.habit.done .h-name { color: var(--text-dim); text-decoration: line-through; text-decoration-color: var(--text-dim); }
+
+/* Book extra */
+.book-extra { padding: 0.6rem 0.5rem 0.3rem; }
+.book-inp {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-b);
+  font-size: 0.82rem;
+  padding: 5px 2px;
+  margin-bottom: 8px;
+}
+.book-inp:focus { outline: none; border-bottom-color: var(--gold); }
+.book-inp::placeholder { color: var(--text-dim); }
+.pages-row { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--text-muted); }
+.n-inp {
+  width: 50px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  color: var(--gold);
+  font-family: var(--font-d);
+  font-size: 1rem;
+  padding: 3px 6px;
+  text-align: center;
+}
+.n-inp:focus { outline: none; border-color: var(--gold); }
+
+/* ── NOTE ── */
+.note-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 1.1rem 1.3rem;
+  margin-bottom: 1rem;
+}
+.note-head {
+  font-family: var(--font-d);
+  font-size: 1.05rem;
+  font-weight: 400;
+  color: var(--text);
+  margin-bottom: 0.7rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.note-head::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.note-ta {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-b);
+  font-size: 0.83rem;
+  line-height: 1.7;
+  min-height: 72px;
+  resize: vertical;
+}
+.note-ta:focus { outline: none; color: var(--text); }
+.note-ta::placeholder { color: var(--text-dim); }
+
+/* ── WEEKLY CHART ── */
+.chart-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 1.1rem 1.3rem;
+  margin-bottom: 1rem;
+}
+.chart-bars { display: flex; align-items: flex-end; gap: 8px; height: 80px; margin-top: 0.8rem; }
+.c-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+.c-bar { width: 100%; border-radius: 4px 4px 0 0; min-height: 3px; transition: height .4s ease; position: relative; cursor: pointer; }
+.c-bar:hover { opacity: 0.8; }
+.c-bar-lbl { font-size: 0.62rem; color: var(--text-dim); }
+
+/* ── CALENDAR ── */
+.cal-panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 1.3rem;
+  position: sticky;
+  top: 1.5rem;
+}
+.cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.3rem; }
+.cal-month { font-family: var(--font-d); font-size: 1.2rem; font-weight: 400; }
+.cal-nav { display: flex; gap: 4px; }
+.cal-btn {
+  width: 28px; height: 28px;
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  transition: all .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.cal-btn:hover { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+.cal-wds { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; margin-bottom: 3px; }
+.cal-wd { text-align: center; font-size: 0.62rem; color: var(--text-dim); letter-spacing: 0.07em; padding: 3px 0; }
+.cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; }
+.cal-day {
+  aspect-ratio: 1;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 7px;
+  font-size: 0.76rem;
+  cursor: pointer;
+  color: var(--text-muted);
+  position: relative;
+  transition: all .13s;
+  -webkit-tap-highlight-color: transparent;
+}
+.cal-day:hover { background: var(--gold-dim); color: var(--gold); }
+.cal-day.other { color: var(--text-dim); opacity: 0.35; }
+.cal-day.today { color: var(--gold); font-weight: 500; }
+.cal-day.today::after { content: ''; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); width: 3px; height: 3px; border-radius: 50%; background: var(--gold); }
+.cal-day.sel { background: var(--gold); color: #0e0d0b; font-weight: 500; border-radius: 8px; }
+.cal-day.sel::after { display: none; }
+.cal-day.has-data::before { content: ''; position: absolute; top: 2px; right: 2px; width: 4px; height: 4px; border-radius: 50%; background: var(--sage); }
+.cal-day.sel.has-data::before { background: rgba(14,13,11,0.45); }
+
+.cal-legend { margin-top: 1.1rem; padding-top: 1.1rem; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 7px; }
+.leg-row { display: flex; align-items: center; gap: 8px; font-size: 0.72rem; color: var(--text-muted); }
+.leg-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── STATS card on calendar page ── */
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 1.3rem; }
+.stat-box { background: var(--card2); border: 1px solid var(--border); border-radius: var(--rs); padding: 0.9rem 1rem; }
+.stat-num { font-family: var(--font-d); font-size: 2rem; font-weight: 300; color: var(--gold); line-height: 1; }
+.stat-lbl { font-size: 0.68rem; color: var(--text-dim); letter-spacing: 0.06em; text-transform: uppercase; margin-top: 3px; }
+.stat-sub { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+
+/* ── MOBILE PAGES ── */
+@media (max-width: 680px) {
+  .desktop-wrap { padding: 0 1rem calc(80px + var(--safe-bottom)); }
+  .header { padding: calc(var(--safe-top) + 1rem) 0 1.2rem; }
+  .layout { grid-template-columns: 1fr; }
+  .cal-panel { position: static; }
+  .history-wrap { margin-bottom: 1.3rem; }
+  #sidebar { display: none; }
+
+  .page { display: none; }
+  .page.active { display: block; }
+}
+
+@media (min-width: 681px) {
+  .mobile-nav { display: none !important; }
+  .page { display: block !important; }
+  #sidebar { display: block !important; }
+}
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: calc(80px + var(--safe-bottom) + 12px);
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--card2);
+  border: 1px solid var(--border-strong);
+  border-radius: 20px;
+  padding: 8px 18px;
+  font-size: 0.78rem;
+  color: var(--text);
+  opacity: 0;
+  transition: all .3s;
+  pointer-events: none;
+  z-index: 200;
+  white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+@media (min-width: 681px) {
+  .toast { bottom: 24px; }
+}
+
+/* Animations */
+@keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+.main-panel > * { animation: fadeUp .28s ease forwards; }
+</style>
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="toast" id="toast"></div>
+
+<div class="app">
+<div class="desktop-wrap">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div>
+      <h1>мой <em>трекер</em></h1>
+      <div class="header-sub">личный дневник привычек</div>
+    </div>
+    <div class="header-right">
+      <div class="streak-big" id="streak-num">0</div>
+      <div class="streak-lbl">дней подряд 🔥</div>
+    </div>
+  </header>
+
+  <!-- HISTORY BAR -->
+  <div class="history-wrap">
+    <div class="history-inner" id="history-strip"></div>
+  </div>
+
+  <div class="layout">
+
+    <!-- MAIN COLUMN -->
+    <div class="main-panel">
+
+      <!-- HOME PAGE -->
+      <div class="page page-home active" id="page-home">
+        <!-- Quote -->
+        <div class="quote-card">
+          <div class="quote-mark">"</div>
+          <button class="quote-refresh" id="quote-refresh" title="другая цитата">↻</button>
+          <div class="quote-text" id="quote-text"></div>
+        </div>
+
+        <div class="date-label" id="date-label"></div>
+
+        <!-- Progress -->
+        <div class="day-progress">
+          <div class="ring-wrap">
+            <svg class="ring-svg" width="60" height="60" viewBox="0 0 60 60">
+              <circle class="ring-bg" cx="30" cy="30" r="25"/>
+              <circle class="ring-fill" id="ring-fill" cx="30" cy="30" r="25" stroke-dasharray="157" stroke-dashoffset="157"/>
+            </svg>
+            <div class="ring-pct" id="ring-pct">0%</div>
+          </div>
+          <div class="pbar-rows">
+            <div class="pbar-row"><div class="pbar-lbl">книги</div><div class="pbar-track"><div class="pbar-fill book" id="pb-book" style="width:0%"></div></div><div class="pbar-pct" id="pp-book">0%</div></div>
+            <div class="pbar-row"><div class="pbar-lbl">уход</div><div class="pbar-track"><div class="pbar-fill care" id="pb-care" style="width:0%"></div></div><div class="pbar-pct" id="pp-care">0%</div></div>
+            <div class="pbar-row"><div class="pbar-lbl">спорт</div><div class="pbar-track"><div class="pbar-fill sport" id="pb-sport" style="width:0%"></div></div><div class="pbar-pct" id="pp-sport">0%</div></div>
+          </div>
+        </div>
+
+        <!-- Mood -->
+        <div class="mood-card">
+          <div class="card-title">настроение дня</div>
+          <div class="mood-opts">
+            <button class="mood-btn" data-mood="✨ в ресурсе">✨ в ресурсе</button>
+            <button class="mood-btn" data-mood="😊 хорошо">😊 хорошо</button>
+            <button class="mood-btn" data-mood="😐 нейтрально">😐 нейтрально</button>
+            <button class="mood-btn" data-mood="😔 устала">😔 устала</button>
+            <button class="mood-btn" data-mood="🌧 тяжело">🌧 тяжело</button>
+          </div>
+        </div>
+
+        <!-- Energy -->
+        <div class="energy-card">
+          <div class="card-title">уровень энергии <span class="energy-val" id="energy-val">5</span></div>
+          <input type="range" class="energy-slider" id="energy-slider" min="1" max="10" value="5">
+          <div class="energy-labels"><span>совсем нет</span><span>полный заряд</span></div>
+        </div>
+
+        <!-- Water -->
+        <div class="water-card">
+          <div class="card-title">вода сегодня</div>
+          <div class="water-glasses" id="water-glasses"></div>
+          <div class="water-lbl" id="water-lbl">0 из 8 стаканов</div>
+        </div>
+
+        <!-- Books -->
+        <div class="section" id="sec-book">
+          <div class="section-head" onclick="toggleSec('book')">
+            <div class="s-icon book">📚</div>
+            <div class="s-title">книги</div>
+            <div class="s-cnt" id="cnt-book">0 / 1</div>
+            <span class="s-arrow">▼</span>
+          </div>
+          <div class="section-body" id="body-book">
+
+            <!-- Current book card -->
+            <div class="book-card" id="book-card">
+              <div class="book-cover-wrap">
+                <div class="book-cover" id="book-cover">
+                  <div class="book-cover-placeholder" id="book-cover-placeholder">📖</div>
+                  <img id="book-cover-img" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:6px;">
+                </div>
+              </div>
+              <div class="book-info-col">
+                <input class="book-title-inp" id="book-name" placeholder="название книги...">
+                <div class="book-author-inp-wrap">
+                  <input class="book-author-inp" id="book-author" placeholder="автор...">
+                </div>
+                <div class="book-pages-row">
+                  <div class="book-pages-field">
+                    <div class="book-pages-lbl">всего стр.</div>
+                    <input class="n-inp" id="pages-total" type="number" min="1" value="300">
+                  </div>
+                  <div class="book-pages-field">
+                    <div class="book-pages-lbl">прочитано</div>
+                    <input class="n-inp" id="pages-read-total" type="number" min="0" value="0">
+                  </div>
+                </div>
+                <div class="book-pages-row" style="margin-top:2px">
+                  <div class="book-pages-field">
+                    <div class="book-pages-lbl">норма/день</div>
+                    <input class="n-inp" id="pages-goal" type="number" min="1" value="30">
+                  </div>
+                  <div class="book-pages-field">
+                    <div class="book-pages-lbl">сегодня</div>
+                    <input class="n-inp" id="pages-today" type="number" min="0" value="0">
+                  </div>
+                </div>
+                <!-- Progress bar -->
+                <div class="book-progress-wrap">
+                  <div class="book-progress-track">
+                    <div class="book-progress-fill" id="book-progress-fill" style="width:0%"></div>
+                  </div>
+                  <div class="book-progress-labels">
+                    <span id="book-pct-lbl">0%</span>
+                    <span id="book-pages-left-lbl">300 стр. осталось</span>
+                  </div>
+                </div>
+                <button class="book-finish-btn" id="book-finish-btn" onclick="finishBook()">✓ книга прочитана</button>
+              </div>
+            </div>
+
+            <!-- Daily habit row -->
+            <div id="habits-book"></div>
+
+            <!-- Finished books -->
+            <div id="finished-books-wrap" style="display:none">
+              <div class="finished-title">прочитано</div>
+              <div id="finished-books-list"></div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Care -->
+        <div class="section" id="sec-care">
+          <div class="section-head" onclick="toggleSec('care')">
+            <div class="s-icon care">🌸</div>
+            <div class="s-title">уход за собой</div>
+            <div class="s-cnt" id="cnt-care">0 / 6</div>
+            <span class="s-arrow">▼</span>
+          </div>
+          <div class="section-body" id="body-care"><div id="habits-care"></div></div>
+        </div>
+
+        <!-- Sport -->
+        <div class="section" id="sec-sport">
+          <div class="section-head" onclick="toggleSec('sport')">
+            <div class="s-icon sport">🌿</div>
+            <div class="s-title">движение и спорт</div>
+            <div class="s-cnt" id="cnt-sport">0 / 6</div>
+            <span class="s-arrow">▼</span>
+          </div>
+          <div class="section-body" id="body-sport"><div id="habits-sport"></div></div>
+        </div>
+
+        <!-- Note -->
+        <div class="note-card">
+          <div class="note-head">заметка дня</div>
+          <textarea class="note-ta" id="day-note" placeholder="мысли, ощущения, что запомнилось..."></textarea>
+        </div>
+      </div><!-- /page-home -->
+
+      <!-- CAL PAGE (mobile) -->
+      <div class="page page-cal" id="page-cal">
+        <div class="cal-panel" style="position:static; margin-bottom: 1rem;">
+          <div class="cal-head">
+            <div class="cal-month" id="cal-month-label2"></div>
+            <div class="cal-nav">
+              <button class="cal-btn" id="cal-prev2">‹</button>
+              <button class="cal-btn" id="cal-next2">›</button>
+            </div>
+          </div>
+          <div class="cal-wds">
+            <div class="cal-wd">пн</div><div class="cal-wd">вт</div><div class="cal-wd">ср</div>
+            <div class="cal-wd">чт</div><div class="cal-wd">пт</div><div class="cal-wd">сб</div><div class="cal-wd">вс</div>
+          </div>
+          <div class="cal-grid" id="cal-grid2"></div>
+          <div class="cal-legend">
+            <div class="leg-row"><div class="leg-dot" style="background:var(--gold)"></div>выбранный день</div>
+            <div class="leg-row"><div class="leg-dot" style="background:var(--sage)"></div>есть данные</div>
+            <div class="leg-row"><div class="leg-dot" style="background:var(--gold);opacity:0.4"></div>сегодня</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STATS PAGE (mobile) -->
+      <div class="page page-stats" id="page-stats">
+        <div class="stats-grid" id="stats-grid"></div>
+        <div class="chart-card">
+          <div class="card-title">последние 7 дней</div>
+          <div class="chart-bars" id="week-chart"></div>
+        </div>
+      </div>
+
+    </div><!-- /main-panel -->
+
+    <!-- SIDEBAR (desktop) -->
+    <div id="sidebar">
+
+      <!-- Calendar -->
+      <div class="cal-panel" style="margin-bottom: 1.4rem;">
+        <div class="cal-head">
+          <div class="cal-month" id="cal-month-label"></div>
+          <div class="cal-nav">
+            <button class="cal-btn" id="cal-prev">‹</button>
+            <button class="cal-btn" id="cal-next">›</button>
+          </div>
+        </div>
+        <div class="cal-wds">
+          <div class="cal-wd">пн</div><div class="cal-wd">вт</div><div class="cal-wd">ср</div>
+          <div class="cal-wd">чт</div><div class="cal-wd">пт</div><div class="cal-wd">сб</div><div class="cal-wd">вс</div>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+        <div class="cal-legend">
+          <div class="leg-row"><div class="leg-dot" style="background:var(--gold)"></div>выбранный день</div>
+          <div class="leg-row"><div class="leg-dot" style="background:var(--sage)"></div>есть данные</div>
+          <div class="leg-row"><div class="leg-dot" style="background:var(--gold);opacity:0.4"></div>сегодня</div>
+        </div>
+      </div>
+
+      <!-- Stats sidebar -->
+      <div class="stats-grid" id="stats-grid-d"></div>
+
+      <!-- Weekly chart desktop -->
+      <div class="chart-card">
+        <div class="card-title">последние 7 дней</div>
+        <div class="chart-bars" id="week-chart-d"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- MOBILE NAV -->
+<nav class="mobile-nav">
+  <div class="nav-inner">
+    <button class="nav-tab active" id="tab-home" onclick="showTab('home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/></svg>
+      главная
+    </button>
+    <button class="nav-tab" id="tab-cal" onclick="showTab('cal')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      календарь
+    </button>
+    <button class="nav-tab" id="tab-stats" onclick="showTab('stats')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+      статистика
+    </button>
+  </div>
+</nav>
+
+<script>
+// ── DATE UTILS (local, no UTC shift) ──
+function localKey(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function todayKey() { return localKey(new Date()); }
+function keyToDate(key) {
+  const [y,m,d] = key.split('-').map(Number);
+  return new Date(y, m-1, d);
+}
+
+const MONTHS_RU = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+const MONTHS_GEN = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+const DAYS_SHORT = ['пн','вт','ср','чт','пт','сб','вс'];
+
+const HABITS = {
+  book: [
+    {id:'b1', name:'прочитать норму страниц'},
+  ],
+  care: [
+    {id:'c1', name:'уходка утром — умывание, тоник, крем'},
+    {id:'c6', name:'уходка вечером — снятие макияжа, сыворотка, крем'},
+    {id:'c2', name:'маска или сыворотка'},
+    {id:'c3', name:'уход за телом'},
+    {id:'c4', name:'выпила 2 литра воды'},
+    {id:'c5', name:'сон 7–8 часов'},
+  ],
+  sport: [
+    {id:'s1', name:'арабские танцы'},
+    {id:'s2', name:'растяжка / разминка'},
+    {id:'s3', name:'прогулка 30+ минут'},
+    {id:'s4', name:'кардио или силовая'},
+    {id:'s5', name:'10 000 шагов'},
+    {id:'s6', name:'тренировка 30 минут'},
+  ]
+};
+
+const QUOTES = [
+  'дисциплина — это любовь к себе в действии.',
+  'каждый маленький шаг считается. каждый.',
+  'ты уже делаешь больше, чем думаешь.',
+  'забота о себе — это не роскошь, а необходимость.',
+  'прогресс, а не совершенство.',
+  'твоё тело — твой дом. относись к нему соответственно.',
+  'сегодняшние привычки — это завтрашняя версия себя.',
+  'движение — это медитация в действии.',
+  'читай. расти. живи глубже.',
+  'маленькая ежедневная победа — это сила.',
+];
+
+let state = {};
+try { state = JSON.parse(localStorage.getItem('nig_tracker3') || '{}'); } catch(e){}
+function save() { try { localStorage.setItem('nig_tracker3', JSON.stringify(state)); } catch(e){} }
+
+let books = { current: null, finished: [] };
+try { books = JSON.parse(localStorage.getItem('nig_books') || '{"current":null,"finished":[]}'); } catch(e){}
+function saveBooks() { try { localStorage.setItem('nig_books', JSON.stringify(books)); } catch(e){} }
+
+function getDay(key) {
+  if (!state[key]) state[key] = { checked:{}, note:'', mood:'', energy:5, water:0, pagesRead:0 };
+  return state[key];
+}
+
+let currentKey = todayKey();
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+let quoteIdx = Math.floor(Math.random() * QUOTES.length);
+
+// ── TOAST ──
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ── MOBILE TABS ──
+let activeTab = 'home';
+function showTab(tab) {
+  activeTab = tab;
+  ['home','cal','stats'].forEach(t => {
+    const page = document.getElementById('page-'+t);
+    if (page) page.classList.toggle('active', t === tab);
+    const btn = document.getElementById('tab-'+t);
+    if (btn) btn.classList.toggle('active', t === tab);
+  });
+  if (tab === 'stats') renderStats();
+}
+
+// ── SECTION COLLAPSE ──
+function toggleSec(cat) {
+  const sec = document.getElementById('sec-'+cat);
+  sec.classList.toggle('collapsed');
+}
+
+// ── QUOTE ──
+function renderQuote() {
+  document.getElementById('quote-text').textContent = QUOTES[quoteIdx % QUOTES.length];
+}
+document.getElementById('quote-refresh').onclick = () => {
+  quoteIdx = (quoteIdx + 1) % QUOTES.length;
+  renderQuote();
+};
+
+// ── WATER ──
+function renderWater(data) {
+  const container = document.getElementById('water-glasses');
+  container.innerHTML = '';
+  const w = data.water || 0;
+  for (let i = 0; i < 8; i++) {
+    const g = document.createElement('div');
+    g.className = 'glass' + (i < w ? ' filled' : '');
+    const fill = document.createElement('div');
+    fill.className = 'glass-fill';
+    g.appendChild(fill);
+    g.onclick = () => {
+      const d = getDay(currentKey);
+      d.water = (i < d.water) ? i : i + 1;
+      save(); renderMain();
+    };
+    container.appendChild(g);
+  }
+  document.getElementById('water-lbl').textContent = `${w} из 8 стаканов (${w * 250} мл)`;
+}
+
+// ── HABIT ──
+function makeHabit(h, cat, data) {
+  const done = !!data.checked[h.id];
+  const div = document.createElement('div');
+  div.className = `habit ${cat}${done?' done':''}`;
+  div.innerHTML = `<div class="chk"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><polyline points="1,4 3.5,6.5 9,1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="h-name">${h.name}</div>`;
+  div.onclick = () => {
+    const d = getDay(currentKey);
+    d.checked[h.id] = !d.checked[h.id];
+    save();
+    if (!done) toast('✓ выполнено');
+    renderMain();
+    renderHistory();
+    renderCalendar('cal-grid', 'cal-month-label');
+    renderCalendar('cal-grid2', 'cal-month-label2');
+    calcStreak();
+  };
+  return div;
+}
+
+// ── BOOK ──
+let coverFetchTimer = null;
+
+function fetchCover(title, author) {
+  if (!title || title.length < 3) return;
+  const query = encodeURIComponent((title + ' ' + (author||'')).trim());
+  const url = `https://openlibrary.org/search.json?q=${query}&limit=1&fields=cover_i,title`;
+  fetch(url)
+    .then(r => r.json())
+    .then(data => {
+      const coverId = data.docs?.[0]?.cover_i;
+      const img = document.getElementById('book-cover-img');
+      const placeholder = document.getElementById('book-cover-placeholder');
+      if (coverId && img) {
+        img.src = `https://covers.openlibrary.org/b/id/${coverId}-M.jpg`;
+        img.onload = () => { img.style.display = 'block'; placeholder.style.display = 'none'; };
+        img.onerror = () => { img.style.display = 'none'; placeholder.style.display = 'flex'; };
+        if (books.current) { books.current.coverId = coverId; saveBooks(); }
+      }
+    }).catch(() => {});
+}
+
+function renderBook() {
+  const b = books.current || {};
+  const titleInp = document.getElementById('book-name');
+  const authorInp = document.getElementById('book-author');
+  const totalInp = document.getElementById('pages-total');
+  const readInp = document.getElementById('pages-read-total');
+  const goalInp = document.getElementById('pages-goal');
+  const todayInp = document.getElementById('pages-today');
+  const fill = document.getElementById('book-progress-fill');
+  const pctLbl = document.getElementById('book-pct-lbl');
+  const leftLbl = document.getElementById('book-pages-left-lbl');
+  const img = document.getElementById('book-cover-img');
+  const placeholder = document.getElementById('book-cover-placeholder');
+
+  if (titleInp) titleInp.value = b.title || '';
+  if (authorInp) authorInp.value = b.author || '';
+
+  // Read from books.current for total/read (set by events before renderBook is called)
+  const total = b.totalPages || 300;
+  const read = b.pagesRead || 0;
+  const goal = b.dailyGoal || 30;
+  if (totalInp) totalInp.value = total;
+  if (readInp) readInp.value = read;
+  if (goalInp) goalInp.value = goal;
+
+  const dayData = getDay(currentKey);
+  if (todayInp) todayInp.value = dayData.pagesRead || 0;
+
+  // Always compute from the saved values
+  const pct = total > 0 ? Math.min(100, Math.round(read / total * 100)) : 0;
+  const left = Math.max(0, total - read);
+  if (fill) fill.style.width = pct + '%';
+  if (pctLbl) pctLbl.textContent = pct + '%';
+  if (leftLbl) leftLbl.textContent = left > 0 ? `${left} стр. осталось` : '🎉 прочитана!';
+
+  if (b.coverId && img) {
+    img.src = `https://covers.openlibrary.org/b/id/${b.coverId}-M.jpg`;
+    img.style.display = 'block';
+    if (placeholder) placeholder.style.display = 'none';
+  } else if (img) {
+    img.style.display = 'none';
+    if (placeholder) placeholder.style.display = 'flex';
+  }
+
+  // Finished books
+  const finWrap = document.getElementById('finished-books-wrap');
+  const finList = document.getElementById('finished-books-list');
+  if (finList && books.finished.length > 0) {
+    finWrap.style.display = 'block';
+    finList.innerHTML = '';
+    books.finished.slice().reverse().forEach(fb => {
+      const row = document.createElement('div');
+      row.className = 'finished-book-row';
+      const coverDiv = document.createElement('div');
+      coverDiv.className = 'finished-book-cover';
+      if (fb.coverId) {
+        const fImg = document.createElement('img');
+        fImg.src = `https://covers.openlibrary.org/b/id/${fb.coverId}-M.jpg`;
+        fImg.onerror = () => { coverDiv.textContent = '📖'; };
+        coverDiv.appendChild(fImg);
+      } else { coverDiv.textContent = '📖'; }
+      const info = document.createElement('div');
+      info.className = 'finished-book-info';
+      info.innerHTML = `<div class="finished-book-title">${fb.title}</div><div class="finished-book-meta">${fb.author || ''} · ${fb.totalPages || '?'} стр.</div>`;
+      const badge = document.createElement('div');
+      badge.className = 'finished-book-badge';
+      badge.textContent = '✓ прочитана';
+      row.appendChild(coverDiv); row.appendChild(info); row.appendChild(badge);
+      finList.appendChild(row);
+    });
+  } else if (finWrap) {
+    finWrap.style.display = 'none';
+  }
+}
+
+function finishBook() {
+  if (!books.current || !books.current.title) { toast('введи название книги'); return; }
+  books.finished.push({ ...books.current, finishedAt: todayKey() });
+  books.current = null;
+  saveBooks();
+  renderBook();
+  toast('🎉 книга прочитана!');
+}
+
+// ── MAIN RENDER ──
+function renderMain() {
+  const data = getDay(currentKey);
+  const tk = todayKey();
+  const d = keyToDate(currentKey);
+  const wd = (d.getDay() + 6) % 7;
+
+  // Date label
+  const lbl = document.getElementById('date-label');
+  if (currentKey === tk) {
+    lbl.innerHTML = `<em>сегодня</em> · ${d.getDate()} ${MONTHS_GEN[d.getMonth()]}`;
+  } else {
+    lbl.innerHTML = `${DAYS_SHORT[wd]}, ${d.getDate()} <em>${MONTHS_GEN[d.getMonth()]}</em> ${d.getFullYear()}`;
+  }
+
+  // Habits
+  ['book','care','sport'].forEach(cat => {
+    const c = document.getElementById('habits-'+cat);
+    if (c) { c.innerHTML = ''; HABITS[cat].forEach(h => c.appendChild(makeHabit(h, cat, data))); }
+  });
+
+  // Book
+  renderBook();
+
+  // Note / mood
+  document.getElementById('day-note').value = data.note || '';
+  document.querySelectorAll('.mood-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.mood === data.mood));
+
+  // Energy
+  const ev = data.energy !== undefined ? data.energy : 5;
+  document.getElementById('energy-slider').value = ev;
+  document.getElementById('energy-val').textContent = ev;
+
+  // Water
+  renderWater(data);
+
+  // Progress
+  function pct(habits) {
+    const done = habits.filter(h => data.checked[h.id]).length;
+    return habits.length ? Math.round(done / habits.length * 100) : 0;
+  }
+  const pb = pct(HABITS.book), pc = pct(HABITS.care), ps = pct(HABITS.sport);
+  const all = [...HABITS.book,...HABITS.care,...HABITS.sport];
+  const totalDone = all.filter(h => data.checked[h.id]).length;
+  const totalPct = Math.round(totalDone / all.length * 100);
+
+  document.getElementById('pb-book').style.width = pb+'%'; document.getElementById('pp-book').textContent = pb+'%';
+  document.getElementById('pb-care').style.width = pc+'%'; document.getElementById('pp-care').textContent = pc+'%';
+  document.getElementById('pb-sport').style.width = ps+'%'; document.getElementById('pp-sport').textContent = ps+'%';
+
+  const circ = 2 * Math.PI * 25;
+  document.getElementById('ring-fill').style.strokeDashoffset = circ - (totalPct / 100 * circ);
+  document.getElementById('ring-pct').textContent = totalPct+'%';
+
+  // Counts
+  function cnt(habits) { return habits.filter(h=>data.checked[h.id]).length + ' / ' + habits.length; }
+  document.getElementById('cnt-book').textContent = cnt(HABITS.book);
+  document.getElementById('cnt-care').textContent = cnt(HABITS.care);
+  document.getElementById('cnt-sport').textContent = cnt(HABITS.sport);
+
+  renderQuote();
+}
+
+// ── STATS ──
+function renderStats() {
+  const all = [...HABITS.book,...HABITS.care,...HABITS.sport];
+  let totalDays = 0, bestStreak = 0, totalHabits = 0, cur = 0;
+  const today = new Date();
+
+  for (let i = 0; i < 365; i++) {
+    const d2 = new Date(today); d2.setDate(today.getDate()-i);
+    const k = localKey(d2);
+    const data = state[k] || {};
+    const done = all.filter(h=>(data.checked||{})[h.id]).length;
+    if (done >= 1) { totalDays++; totalHabits += done; cur++; bestStreak = Math.max(bestStreak, cur); }
+    else if (i > 0) cur = 0;
+  }
+
+  // Book stats
+  const booksFinished = books.finished.length;
+  const curPct = books.current && books.current.totalPages > 0
+    ? Math.round((books.current.pagesRead || 0) / books.current.totalPages * 100) : 0;
+  const curTitle = books.current && books.current.title ? books.current.title : '—';
+
+  const grids = ['stats-grid', 'stats-grid-d'];
+  grids.forEach(gid => {
+    const el = document.getElementById(gid);
+    if (!el) return;
+    el.innerHTML = `
+      <div class="stat-box"><div class="stat-num">${totalDays}</div><div class="stat-lbl">активных дней</div></div>
+      <div class="stat-box"><div class="stat-num">${bestStreak}</div><div class="stat-lbl">лучшая серия</div></div>
+      <div class="stat-box"><div class="stat-num">${totalHabits}</div><div class="stat-lbl">привычек выполнено</div></div>
+      <div class="stat-box"><div class="stat-num">${totalDays > 0 ? Math.round(totalHabits/totalDays) : 0}</div><div class="stat-lbl">в среднем за день</div></div>
+      <div class="stat-box" style="grid-column:span 2"><div class="stat-num" style="font-size:1.4rem">${curTitle}</div><div class="stat-lbl" style="margin-top:4px">текущая книга · ${curPct}% прочитано</div><div style="height:3px;background:var(--border-strong);border-radius:2px;margin-top:8px;overflow:hidden"><div style="height:100%;width:${curPct}%;background:var(--purple);border-radius:2px;transition:width .4s"></div></div></div>
+      <div class="stat-box"><div class="stat-num">${booksFinished}</div><div class="stat-lbl">книг прочитано</div></div>
+      <div class="stat-box"><div class="stat-num">${books.current ? books.current.dailyGoal || 30 : 30}</div><div class="stat-lbl">страниц в день (норма)</div></div>
+    `;
+  });
+
+  // Weekly chart
+  ['week-chart','week-chart-d'].forEach(cid => {
+    const el = document.getElementById(cid);
+    if (!el) return;
+    el.innerHTML = '';
+    for (let i = 6; i >= 0; i--) {
+      const d2 = new Date(today); d2.setDate(today.getDate()-i);
+      const k = localKey(d2);
+      const data = state[k] || {};
+      const done = all.filter(h=>(data.checked||{})[h.id]).length;
+      const pct = Math.round(done / all.length * 100);
+      const wd = (d2.getDay()+6)%7;
+      const wrap = document.createElement('div');
+      wrap.className = 'c-bar-wrap';
+      const bar = document.createElement('div');
+      bar.className = 'c-bar';
+      bar.style.height = Math.max(pct, 3)+'%';
+      bar.style.background = pct >= 70 ? 'var(--sage)' : pct >= 40 ? 'var(--gold)' : 'var(--border-strong)';
+      bar.title = `${d2.getDate()} — ${done}/${all.length}`;
+      const lbl = document.createElement('div');
+      lbl.className = 'c-bar-lbl';
+      lbl.textContent = DAYS_SHORT[wd];
+      wrap.appendChild(bar);
+      wrap.appendChild(lbl);
+      el.appendChild(wrap);
+    }
+  });
+}
+
+// ── HISTORY STRIP ──
+function renderHistory() {
+  const strip = document.getElementById('history-strip');
+  strip.innerHTML = '';
+  const all = [...HABITS.book,...HABITS.care,...HABITS.sport];
+  const today = new Date();
+  for (let i = 27; i >= 0; i--) {
+    const d = new Date(today); d.setDate(today.getDate()-i);
+    const key = localKey(d);
+    const data = state[key] || {};
+    const done = all.filter(h=>(data.checked||{})[h.id]).length;
+    const pct = Math.round(done / all.length * 100);
+    const wd = (d.getDay()+6)%7;
+    const wrap = document.createElement('div');
+    wrap.className = 'hist-day' + (key===currentKey?' sel':'');
+    const bar = document.createElement('div');
+    bar.className = 'hist-bar';
+    const fill = document.createElement('div');
+    fill.className = 'hist-fill';
+    fill.style.height = pct+'%';
+    fill.style.background = pct >= 70 ? 'var(--sage)' : pct >= 40 ? 'var(--gold)' : 'rgba(255,255,255,0.1)';
+    bar.appendChild(fill);
+    const lbl = document.createElement('div');
+    lbl.className = 'hist-lbl';
+    lbl.textContent = i===0 ? 'сег' : DAYS_SHORT[wd];
+    wrap.appendChild(bar);
+    wrap.appendChild(lbl);
+    wrap.onclick = () => { currentKey = key; renderMain(); renderCalendar('cal-grid','cal-month-label'); renderCalendar('cal-grid2','cal-month-label2'); renderHistory(); renderStats(); };
+    strip.appendChild(wrap);
+  }
+}
+
+// ── CALENDAR ──
+function renderCalendar(gridId, labelId) {
+  document.getElementById(labelId).textContent = MONTHS_RU[calMonth] + ' ' + calYear;
+  const grid = document.getElementById(gridId);
+  grid.innerHTML = '';
+  const first = new Date(calYear, calMonth, 1);
+  const startWd = (first.getDay()+6)%7;
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const prevDays = new Date(calYear, calMonth, 0).getDate();
+  const tk = todayKey();
+
+  function makeCell(num, dateObj, isOther) {
+    const key = localKey(dateObj);
+    const el = document.createElement('div');
+    el.className = 'cal-day' + (isOther?' other':'') + (key===tk?' today':'') + (key===currentKey?' sel':'');
+    const d2 = state[key];
+    if (d2 && Object.keys(d2.checked||{}).filter(k2=>d2.checked[k2]).length > 0) el.classList.add('has-data');
+    el.textContent = num;
+    el.onclick = () => {
+      currentKey = key;
+      calYear = dateObj.getFullYear();
+      calMonth = dateObj.getMonth();
+      renderMain(); renderHistory(); renderStats();
+      renderCalendar('cal-grid','cal-month-label');
+      renderCalendar('cal-grid2','cal-month-label2');
+      if (window.innerWidth <= 680) showTab('home');
+    };
+    return el;
+  }
+
+  for (let i=0;i<startWd;i++) { const day=prevDays-startWd+1+i; grid.appendChild(makeCell(day,new Date(calYear,calMonth-1,day),true)); }
+  for (let d=1;d<=daysInMonth;d++) grid.appendChild(makeCell(d,new Date(calYear,calMonth,d),false));
+  const total=startWd+daysInMonth; const rem=total%7===0?0:7-(total%7);
+  for (let d=1;d<=rem;d++) grid.appendChild(makeCell(d,new Date(calYear,calMonth+1,d),true));
+}
+
+// ── STREAK ──
+function calcStreak() {
+  const all = [...HABITS.book,...HABITS.care,...HABITS.sport];
+  let streak = 0;
+  const today = new Date();
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(today); d.setDate(today.getDate()-i);
+    const data = state[localKey(d)] || {};
+    const done = all.filter(h=>(data.checked||{})[h.id]).length;
+    if (done >= Math.ceil(all.length * 0.5)) streak++;
+    else if (i > 0) break;
+  }
+  document.getElementById('streak-num').textContent = streak;
+}
+
+// ── EVENTS ──
+document.getElementById('cal-prev').onclick = () => { calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCalendar('cal-grid','cal-month-label'); renderCalendar('cal-grid2','cal-month-label2'); };
+document.getElementById('cal-next').onclick = () => { calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCalendar('cal-grid','cal-month-label'); renderCalendar('cal-grid2','cal-month-label2'); };
+document.getElementById('cal-prev2').onclick = () => { calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCalendar('cal-grid','cal-month-label'); renderCalendar('cal-grid2','cal-month-label2'); };
+document.getElementById('cal-next2').onclick = () => { calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCalendar('cal-grid','cal-month-label'); renderCalendar('cal-grid2','cal-month-label2'); };
+
+document.getElementById('book-name').addEventListener('input', e => {
+  if (!books.current) books.current = {};
+  books.current.title = e.target.value;
+  saveBooks();
+  clearTimeout(coverFetchTimer);
+  coverFetchTimer = setTimeout(() => fetchCover(books.current.title, books.current.author), 900);
+});
+document.getElementById('book-author').addEventListener('input', e => {
+  if (!books.current) books.current = {};
+  books.current.author = e.target.value;
+  saveBooks();
+  clearTimeout(coverFetchTimer);
+  coverFetchTimer = setTimeout(() => fetchCover(books.current.title, books.current.author), 900);
+});
+document.getElementById('pages-total').addEventListener('input', e => {
+  if (!books.current) books.current = {};
+  books.current.totalPages = parseInt(e.target.value) || 300;
+  saveBooks();
+  renderBook();
+});
+document.getElementById('pages-read-total').addEventListener('input', e => {
+  if (!books.current) books.current = {};
+  books.current.pagesRead = parseInt(e.target.value) || 0;
+  saveBooks();
+  renderBook();
+});
+document.getElementById('pages-goal').addEventListener('input', e => {
+  if (!books.current) books.current = {};
+  books.current.dailyGoal = parseInt(e.target.value) || 30;
+  saveBooks();
+});
+document.getElementById('pages-today').addEventListener('input', e => {
+  const v = parseInt(e.target.value) || 0;
+  getDay(currentKey).pagesRead = v;
+  save();
+});
+document.getElementById('day-note').addEventListener('input', e => { getDay(currentKey).note = e.target.value; save(); });
+document.getElementById('energy-slider').addEventListener('input', e => {
+  const v = parseInt(e.target.value);
+  document.getElementById('energy-val').textContent = v;
+  getDay(currentKey).energy = v; save();
+});
+document.querySelectorAll('.mood-btn').forEach(btn => {
+  btn.onclick = () => {
+    const d = getDay(currentKey);
+    d.mood = d.mood === btn.dataset.mood ? '' : btn.dataset.mood;
+    save(); renderMain();
+  };
+});
+
+// ── INIT ──
+renderMain();
+renderCalendar('cal-grid','cal-month-label');
+renderCalendar('cal-grid2','cal-month-label2');
+renderHistory();
+renderStats();
+calcStreak();
+</script>
+</body>
+</html>
